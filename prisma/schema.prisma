@@ -8,6 +8,128 @@ generator client {
   output   = "../generated/prisma"
 }
 
+generator docs {
+  provider = "node node_modules/prisma-docs-generator"
+  output   = "../generated/prisma-docs"
+}
+
+generator jsonSchema {
+  provider = "node node_modules/prisma-json-schema-generator"
+  output   = "../generated/prisma-json-schema"
+}
+
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  name        String?
+  email       String       @unique
+  userProfile UserProfile?
+}
+
+model Test {
+  id  Int    @id @default(autoincrement())
+  aaa String @db.Text
+  bbb Int    @map("bbb2") @db.TinyInt
+  ccc String @unique @db.VarChar(50)
+
+  @@index([bbb, ccc])
+  @@map("test_test")
+}
+
+// 1:n
+model Department {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(20)
+  createTime DateTime @default(now())
+  updateTime DateTime @updatedAt
+
+  employees Employee[]
+}
+
+model Employee {
+  id           Int        @id @default(autoincrement())
+  name         String     @db.VarChar(20)
+  phone        String     @db.VarChar(20)
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+}
+
+// n:n
+model Student {
+  id             Int             @id @default(autoincrement())
+  name           String          @db.VarChar(20)
+  studentCourses StudentCourse[]
+}
+
+model Course {
+  id             Int             @id @default(autoincrement())
+  name           String          @db.VarChar(20)
+  studentCourses StudentCourse[]
+}
+
+model StudentCourse {
+  student   Student @relation(fields: [studentId], references: [id])
+  studentId Int
+
+  course   Course @relation(fields: [courseId], references: [id])
+  courseId Int
+
+  @@id([studentId, courseId])
+}
+
+model Post {
+  id        Int          @id @default(autoincrement())
+  title     String
+  content   String?
+  published Boolean      @default(false)
+  tags      TagOnPosts[]
+}
+
+model Tag {
+  id    Int          @id @default(autoincrement())
+  name  String
+  posts TagOnPosts[]
+}
+
+model TagOnPosts {
+  post   Post @relation(fields: [postId], references: [id])
+  postId Int
+
+  tag   Tag @relation(fields: [tagId], references: [id])
+  tagId Int
+
+  @@id([postId, tagId])
+}
+
+// 1:1
+model UserProfile {
+  id     Int    @id @default(autoincrement())
+  bio    String
+  user   User   @relation(fields: [userId], references: [id])
+  userId Int    @unique
+}
+
+// self relation
+model Category {
+  id       Int        @id @default(autoincrement())
+  name     String
+  parent   Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  parentId Int?
+  children Category[] @relation("CategoryToCategory")
+}
+
+// enum
+enum Role {
+  USER
+  ADMIN
+}
+
+// enum field
+model UserWithRole {
+  id   Int    @id @default(autoincrement())
+  name String
+  role Role
 }
